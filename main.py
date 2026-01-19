@@ -20,16 +20,41 @@ if setup_file:
         st.dataframe(df_setup)
 
 st.header("2️⃣ 지난달 약품 사용량 파일 업로드")
+
 usage_file = st.file_uploader("💾 사용량 엑셀 파일 업로드 (.xlsx)", type=["xlsx"], key="usage")
 
 if usage_file:
-    df_usage = pd.read_excel(usage_file)
-    usage_cols = {"청구코드", "소모량"}
-    if not usage_cols.issubset(df_usage.columns):
-        st.error("❌ '청구코드', '소모량' 컬럼이 필요합니다")
-    else:
-        st.success("✅ 사용량 파일 불러오기 성공")
-        st.dataframe(df_usage)
+    try:
+        df_raw = pd.read_excel(usage_file)
+
+        # Unnamed 인덱스 컬럼 제거
+        df_raw = df_raw.loc[:, ~df_raw.columns.str.contains("^Unnamed")]
+
+        # 청구코드 컬럼 찾기
+        code_col = None
+        for col in df_raw.columns:
+            if "청구" in col and "코드" in col:
+                code_col = col
+                break
+
+        # 소모량 or 사용량 컬럼 찾기
+        usage_col = None
+        for col in df_raw.columns:
+            if "소모" in col or "사용" in col:
+                usage_col = col
+                break
+
+        if not code_col or not usage_col:
+            st.error("❌ '청구코드' 또는 '소모량/사용량' 컬럼을 찾을 수 없습니다.")
+        else:
+            df_usage = df_raw[[code_col, usage_col]].copy()
+            df_usage.columns = ["청구코드", "소모량"]
+            df_usage = df_usage.dropna()
+            st.success("✅ 사용량 파일 자동 정제 완료")
+            st.dataframe(df_usage)
+
+    except Exception as e:
+        st.error(f"❌ 파일 처리 중 오류 발생: {e}")
 
 st.header("3️⃣ 직원용 주문 계산기")
 

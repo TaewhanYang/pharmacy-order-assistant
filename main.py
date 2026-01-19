@@ -75,7 +75,7 @@ if setup_file and usage_file:
 
                 code = row["청구코드"]
                 unit_size = int(row["단위"])
-                usage = df_usage[df_usage["청구코드"] == code]["소모량"]
+                usage = df_usage[df_usage["청구코드"].astype(str) == str(code)]["소모량"]
                 last_month_used = float(usage.iloc[0]) if not usage.empty else 0
                 target_stock = math.ceil(last_month_used * 1.2)
                 needed_qty = max(target_stock - last_month_used, 0)
